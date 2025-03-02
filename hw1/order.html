@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的订单 - BookStore</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <style>
+        .order-container {
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .order-card {
+            border: 1px solid #eee;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            overflow: hidden;
+        }
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            padding: 1rem;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #eee;
+        }
+        .order-status {
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+        .order-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            border-bottom: 1px solid #eee;
+            gap: 1rem;
+        }
+        .order-footer {
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .empty-orders {
+            text-align: center;
+            padding: 3rem;
+            color: #666;
+        }
+        .total-section {
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-left-group">
+            <div class="logo-section">
+                <div class="logo"></div>
+                <h1>BookStore</h1>
+            </div>
+            <div class="nav-menu">
+                <button class="nav-link" onclick="location.href='index.html'">全部书籍</button>
+                <button class="nav-link" onclick="location.href='cart.html'">购物车</button>
+                <button class="nav-link active" onclick="location.href='order.html'">我的订单</button>
+            </div>
+        </div>
+        <div class="user-section">
+            <span>Hi，用户</span>
+        </div>
+    </nav>
+
+    <main class="order-container">
+        <h2>我的订单</h2>
+        <div id="ordersContainer">
+            <!-- 订单内容将通过JavaScript动态生成 -->
+        </div>
+    </main>
+
+    <script src="assets/js/app.js"></script>
+    <script>
+        // 订单页面专用脚本
+        document.addEventListener('DOMContentLoaded', function() {
+            // 加载订单数据
+            loadOrders();
+        });
+        
+        // 加载订单
+        function loadOrders() {
+            const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+            const container = document.getElementById('ordersContainer');
+            
+            if (orders.length === 0) {
+                container.innerHTML = '<div class="empty-orders">您还没有订单，去<a href="index.html">书城</a>购物吧</div>';
+                return;
+            }
+            
+            container.innerHTML = orders.map((order, index) => `
+                <div class="order-card">
+                    <div class="order-header">
+                        <span>订单号: ${order.id}</span>
+                        <span>下单时间: ${new Date(order.date).toLocaleString()}</span>
+                        <span class="order-status">${getStatusText(order.status)}</span>
+                    </div>
+                    
+                    <div class="order-items">
+                        ${order.items.map(item => `
+                            <div class="order-item">
+                                <img src="${item.cover}" alt="${item.title}" style="width: 80px">
+                                <div class="item-info">
+                                    <h3><a href="book-detail.html?id=${item.id}">${item.title}</a></h3>
+                                    <p>作者：${item.author}</p>
+                                    <p class="price-tag">¥${item.price.toFixed(2)} × ${item.quantity}</p>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    
+                    <div class="order-footer">
+                        <div class="total-section">
+                            <span>总计：</span>
+                            <span class="total-price">¥${order.total.toFixed(2)}</span>
+                        </div>
+                        <div class="action-buttons">
+                            ${order.status === 'pending' ? 
+                                `<button class="btn" onclick="cancelOrder('${order.id}')">取消订单</button>
+                                <button class="btn btn-primary" onclick="payOrder('${order.id}')">立即支付</button>` : 
+                                '<button class="btn btn-primary" disabled>已完成</button>'
+                            }
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // 获取状态文本
+        function getStatusText(status) {
+            const statusMap = {
+                'pending': '待支付',
+                'paid': '已支付',
+                'shipped': '已发货',
+                'completed': '已完成',
+                'cancelled': '已取消'
+            };
+            return statusMap[status] || status;
+        }
+        
+        // 支付订单
+        function payOrder(orderId) {
+            const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+            const orderIndex = orders.findIndex(order => order.id === orderId);
+            
+            if (orderIndex !== -1) {
+                orders[orderIndex].status = 'paid';
+                localStorage.setItem('orders', JSON.stringify(orders));
+                showToast('支付成功！');
+                loadOrders(); // 重新加载订单列表
+            }
+        }
+        
+        // 取消订单
+        function cancelOrder(orderId) {
+            const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+            const orderIndex = orders.findIndex(order => order.id === orderId);
+            
+            if (orderIndex !== -1) {
+                orders[orderIndex].status = 'cancelled';
+                localStorage.setItem('orders', JSON.stringify(orders));
+                showToast('订单已取消');
+                loadOrders(); // 重新加载订单列表
+            }
+        }
+        
+        // 显示提示消息
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast-message ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            // 显示动画
+            setTimeout(() => toast.classList.add('show'), 10);
+            
+            // 2秒后消失
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 2000);
+        }
+    </script>
+</body>
+</html>

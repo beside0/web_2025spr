@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BookStore - 登录</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <style>
+        .login-container {
+            max-width: 400px;
+            margin: 2rem auto;
+            padding: 2rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        input[type="text"], 
+        input[type="password"] {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .remember-me {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo-section">
+            <div class="logo"></div>
+            <h1>BookStore</h1>
+        </div>
+    </nav>
+
+    <div class="login-container">
+        <h2>用户登录</h2>
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">用户名</label>
+                <input type="text" id="username" required>
+            </div>
+            <div class="form-group">
+                <label for="password">密码</label>
+                <input type="password" id="password" required>
+            </div>
+            <div class="form-group remember-me">
+                <input type="checkbox" id="remember">
+                <label for="remember">记住我</label>
+                <button type="button" class="btn" style="margin-left: auto;">忘记密码？</button>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;" onclick="location.href='index.html'">登录</button>
+        </form>
+    </div>
+
+    <script src="assets/js/app.js"></script>
+</body>
+</html>

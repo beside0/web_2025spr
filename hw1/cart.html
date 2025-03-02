@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>购物车 - BookStore</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <style>
+        .cart-container {
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .cart-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            border-bottom: 1px solid #eee;
+            gap: 1rem;
+        }
+        .item-info {
+            flex: 1;
+            margin-left: 1rem;
+        }
+        .quantity-control {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .cart-footer {
+            margin-top: 2rem;
+            padding: 1rem;
+            background: var(--bg-light);
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .delete-btn {
+            color: #666;
+            cursor: pointer;
+        }
+        .empty-cart {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-left-group">
+            <div class="logo-section">
+                <div class="logo"></div>
+                <h1>BookStore</h1>
+            </div>
+            <div class="nav-menu">
+                <button class="nav-link" onclick="location.href='index.html'">全部书籍</button>
+                <button class="nav-link active" onclick="location.href='cart.html'">购物车</button>
+                <button class="nav-link" onclick="location.href='order.html'">我的订单</button>
+            </div>
+        </div>
+        <div class="user-section">
+            <span>Hi，用户</span>
+        </div>
+    </nav>
+
+    <main class="cart-container">
+        <h2>购物车</h2>
+        <div class="cart-items" id="cartItemsContainer">
+            <!-- 购物车内容将通过JavaScript动态生成 -->
+        </div>
+        
+        <div class="cart-footer">
+            <div class="footer-left">
+                <label>
+                    <input type="checkbox" id="selectAll"> 全选
+                </label>
+            </div>
+            <div class="footer-right">
+                <span>总计：</span>
+                <span class="total-price" id="totalPrice">¥0.00</span>
+                <button class="btn btn-primary" id="checkoutBtn">去结算</button>
+            </div>
+        </div>
+    </main>
+
+    <script src="assets/js/app.js"></script>
+    <script>
+        // 购物车页面专用脚本
+        document.addEventListener('DOMContentLoaded', function() {
+            // 加载购物车数据
+            loadCartItems();
+            
+            // 全选按钮事件
+            document.getElementById('selectAll').addEventListener('change', function() {
+                const isChecked = this.checked;
+                document.querySelectorAll('.cart-item input[type="checkbox"]').forEach(checkbox => {
+                    checkbox.checked = isChecked;
+                });
+                updateTotalPrice();
+            });
+            
+            // 绑定复选框事件 - 修复事件绑定问题
+            document.getElementById('cartItemsContainer').addEventListener('change', function(e) {
+                if (e.target.classList.contains('item-checkbox')) {
+                    updateTotalPrice();
+                    updateSelectAllStatus();
+                }
+            });
+            
+            // 结算按钮事件
+            document.getElementById('checkoutBtn').addEventListener('click', function() {
+                const selectedItems = Array.from(document.querySelectorAll('.cart-item input[type="checkbox"]:checked'))
+                    .map(checkbox => checkbox.closest('.cart-item').dataset.itemId);
+                
+                if (selectedItems.length === 0) {
+                    showToast('请选择要结算的商品', 'error');
+                    return;
+                }
+                
+                // 创建订单并跳转到订单页
+                createOrder(selectedItems);
+            });
+        });
+        
+        // 更新全选按钮状态
+        function updateSelectAllStatus() {
+            const allCheckboxes = document.querySelectorAll('.cart-item input[type="checkbox"]');
+            const checkedBoxes = document.querySelectorAll('.cart-item input[type="checkbox"]:checked');
+            
+            if (allCheckboxes.length > 0) {
+                document.getElementById('selectAll').checked = 
+                    allCheckboxes.length === checkedBoxes.length;
+            }
+        }
+        
+        // 加载购物车商品
+        function loadCartItems() {
+            const cartItems = JSON.parse(localStorage.getItem('cart') || '[]');
+            const container = document.getElementById('cartItemsContainer');
+            
+            if (cartItems.length === 0) {
+                container.innerHTML = '<div class="empty-cart">购物车是空的，去<a href="index.html">书城</a>逛逛吧</div>';
+                return;
+            }
+            
+            container.innerHTML = cartItems.map(item => `
+                <div class="cart-item" data-item-id="${item.id}">
+                    <input type="checkbox" class="item-checkbox">
+                    <img src="${item.cover}" alt="${item.title}" style="width: 80px">
+                    <div class="item-info">
+                        <h3><a href="book-detail.html?id=${item.id}">${item.title}</a></h3>
+                        <p>作者：${item.author}</p>
+                        <p class="price-tag">¥${item.price.toFixed(2)}</p>
+                    </div>
+                    <div class="quantity-control">
+                        <button class="quantity-minus" onclick="updateItemQuantity('${item.id}', -1)">-</button>
+                        <span class="quantity">${item.quantity}</span>
+                        <button class="quantity-plus" onclick="updateItemQuantity('${item.id}', 1)">+</button>
+                    </div>
+                    <span class="delete-btn" onclick="removeCartItem('${item.id}')">🗑️</span>
+                </div>
+            `).join('');
+            
+            // 初始化总价
+            updateTotalPrice();
+        }
+        
+        // 更新商品数量
+        function updateItemQuantity(itemId, change) {
+            const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+            const itemIndex = cart.findIndex(item => item.id === itemId);
+            
+            if (itemIndex !== -1) {
+                cart[itemIndex].quantity = Math.max(1, cart[itemIndex].quantity + change);
+                localStorage.setItem('cart', JSON.stringify(cart));
+                
+                // 更新显示的数量
+                const quantityElement = document.querySelector(`.cart-item[data-item-id="${itemId}"] .quantity`);
+                if (quantityElement) {
+                    quantityElement.textContent = cart[itemIndex].quantity;
+                }
+                
+                updateTotalPrice();
+            }
+        }
+        
+        // 从购物车移除商品
+        function removeCartItem(itemId) {
+            const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+            const newCart = cart.filter(item => item.id !== itemId);
+            localStorage.setItem('cart', JSON.stringify(newCart));
+            
+            // 移除DOM元素
+            document.querySelector(`.cart-item[data-item-id="${itemId}"]`).remove();
+            
+            // 如果购物车空了，显示空购物车信息
+            if (newCart.length === 0) {
+                document.getElementById('cartItemsContainer').innerHTML = 
+                    '<div class="empty-cart">购物车是空的，去<a href="index.html">书城</a>逛逛吧</div>';
+            }
+            
+            updateTotalPrice();
+            updateSelectAllStatus();
+            showToast('已从购物车移除');
+        }
+        
+        // 计算总价
+        function updateTotalPrice() {
+            const selectedItems = Array.from(document.querySelectorAll('.cart-item input[type="checkbox"]:checked'))
+                .map(checkbox => checkbox.closest('.cart-item').dataset.itemId);
+            
+            const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+            const total = cart
+                .filter(item => selectedItems.includes(item.id))
+                .reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            
+            document.getElementById('totalPrice').textContent = `¥${total.toFixed(2)}`;
+        }
+        
+        // 创建订单
+        function createOrder(selectedItemIds) {
+            const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+            const selectedItems = cart.filter(item => selectedItemIds.includes(item.id));
+            
+            if (selectedItems.length === 0) return;
+            
+            const orderTotal = selectedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            
+            // 创建新订单
+            const newOrder = {
+                id: Date.now().toString(),
+                date: new Date().toISOString(),
+                items: selectedItems,
+                total: orderTotal,
+                status: 'pending'
+            };
+            
+            // 保存到localStorage
+            const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+            orders.push(newOrder);
+            localStorage.setItem('orders', JSON.stringify(orders));
+            
+            // 从购物车移除已结算商品
+            const newCart = cart.filter(item => !selectedItemIds.includes(item.id));
+            localStorage.setItem('cart', JSON.stringify(newCart));
+            
+            // 跳转到订单页面
+            window.location.href = 'order.html';
+        }
+        
+        // 显示提示消息
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast-message ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            // 显示动画
+            setTimeout(() => toast.classList.add('show'), 10);
+            
+            // 2秒后消失
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 2000);
+        }
+    </script>
+</body>
+</html>

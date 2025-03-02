@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BookStore - 首页</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<!-- 修改后的导航结构 -->
+<nav class="navbar">
+    <div class="nav-left-group">
+        <div class="logo-section">
+            <div class="logo"></div>
+            <h1 class="brand-name">BookStore</h1>
+        </div>
+        <div class="nav-menu">
+            <button class="nav-link active" data-target="all-books"onclick="location.href='index.html'">全部书籍</button>
+            <button class="nav-link" data-target="cart"onclick="location.href='cart.html'">购物车</button>
+            <button class="nav-link" data-target="orders"onclick="location.href='order.html'">我的订单</button>
+        </div>
+    </div>
+    
+    <div class="user-section">
+        <div class="user-info">
+            <span class="greeting">Hi，游客</span>
+            <button class="user-avatar"></button>
+        </div>
+    </div>
+</nav>
+
+<section class="featured-books">
+  <div class="section-header">
+      <h2 class="section-title">畅销推荐</h2>
+      <div class="scroll-indicator">
+          <span class="arrow left">←</span>
+          <span class="arrow right">→</span>
+      </div>
+  </div>
+  
+  <div class="horizontal-scroll">
+      <div class="books-container">
+          <!-- JavaScript高级程序设计 -->
+          <div class="book-item" id="book-1" data-book-id="1">
+              <div class="image-wrapper">
+                  <img src="assets/images/JavaScript高级程序设计.jpg" 
+                       alt="JavaScript高级程序设计" 
+                       class="book-cover" 
+                       loading="lazy">
+                  <div class="hover-overlay">
+                      <button class="quick-view" data-book-id="1">快速预览</button>
+                  </div>
+              </div>
+              <div class="book-info">
+                  <h3 class="book-title">JavaScript高级程序设计</h3>
+                  <div class="price-section">
+                      <span class="price-tag">¥89.00</span>
+                      <span class="discount-badge">-30%</span>
+                  </div>
+                  <div class="rating-stars">★★★★☆</div>
+              </div>
+          </div>
+
+          <!-- 计算机系统基础 -->
+          <div class="book-item" id="book-2" data-book-id="2">
+              <div class="image-wrapper">
+                  <img src="assets/images/计算机系统基础.jpg"
+                       alt="计算机系统基础" 
+                       class="book-cover" 
+                       loading="lazy">
+                  <div class="hover-overlay">
+                      <button class="quick-view" data-book-id="2">快速预览</button>
+                  </div>
+              </div>
+              <div class="book-info">
+                  <h3 class="book-title">计算机系统基础</h3>
+                  <div class="price-section">
+                      <span class="price-tag">¥75.00</span>
+                      <span class="discount-badge">-20%</span>
+                  </div>
+                  <div class="rating-stars">★★★★★</div>
+              </div>
+          </div>
+
+        
+</section>
+
+<script>
+// 点击事件处理（需放在页面底部或单独JS文件）
+document.querySelectorAll('.book-item, .quick-view').forEach(element => {
+  element.addEventListener('click', (e) => {
+      // 阻止事件冒泡
+      e.stopPropagation();
+      
+      // 获取书籍ID
+      const bookId = e.currentTarget.closest('.book-item').dataset.bookId;
+      
+      // 跳转逻辑（示例使用页面跳转）
+      if (e.target.classList.contains('quick-view')) {
+          // 快速预览逻辑
+          showQuickPreview(bookId);
+      } else {
+          // 跳转到详情页
+          window.location.href = `book-detail.html?id=${bookId}`;
+      }
+  });
+});
+
+function showQuickPreview(bookId) {
+  // 这里可以添加快速预览弹窗逻辑
+  console.log(`快速预览书籍ID: ${bookId}`);
+  // 示例：使用alert显示预览
+  alert(`正在预览书籍ID: ${bookId}`);
+}
+</script>
+  
+  <style>
+  /* 新增滑动动画相关样式 */
+  .horizontal-scroll {
+    overflow-x: hidden;
+    position: relative;
+  }
+  
+  .books-container {
+    display: flex;
+    gap: 20px;
+    transition: transform 0.5s ease-in-out;
+  }
+  
+  /* 其他原有样式保持不变 */
+  </style>
+  
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const scrollContainer = document.querySelector('.horizontal-scroll');
+    const booksContainer = document.querySelector('.books-container');
+    const bookItems = document.querySelectorAll('.book-item');
+    let currentIndex = 0;
+  
+    // 自动滑动函数
+    function autoSlide() {
+      currentIndex = (currentIndex + 1) % bookItems.length;
+      const itemWidth = bookItems[0].offsetWidth + 20; // 包含间隙
+      booksContainer.style.transform = `translateX(-${itemWidth * currentIndex}px)`;
+    }
+  
+    // 每5秒自动滑动
+    let slideInterval = setInterval(autoSlide, 5000);
+  
+    // 鼠标悬停暂停
+    scrollContainer.addEventListener('mouseenter', () => clearInterval(slideInterval));
+    scrollContainer.addEventListener('mouseleave', () => {
+      slideInterval = setInterval(autoSlide, 5000);
+    });
+  
+    // 左右箭头控制（需补充原有的事件监听）
+    document.querySelector('.arrow.left').addEventListener('click', () => {
+      currentIndex = Math.max(currentIndex - 1, 0);
+      const itemWidth = bookItems[0].offsetWidth + 20;
+      booksContainer.style.transform = `translateX(-${itemWidth * currentIndex}px)`;
+    });
+  
+    document.querySelector('.arrow.right').addEventListener('click', () => {
+      currentIndex = (currentIndex + 1) % bookItems.length;
+      const itemWidth = bookItems[0].offsetWidth + 20;
+      booksContainer.style.transform = `translateX(-${itemWidth * currentIndex}px)`;
+    });
+  });
+  </script>
+</section>
+
+    <script src="assets/js/app.js"></script>
+</body>
+</html>
